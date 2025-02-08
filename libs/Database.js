@@ -778,6 +778,11 @@ class Database {
    */
   async insert(payload) { // eslint-disable-line no-unused-vars
     const { contract, table, record } = payload;
+
+    if (this.ignoreChangeForLightNode(contract, table)) {
+      return record;
+    }
+
     const finalTableName = `${contract}_${table}`;
     let finalRecord = null;
 
@@ -839,6 +844,10 @@ class Database {
     const {
       contract, table, record, unsets,
     } = payload;
+
+    if (this.ignoreChangeForLightNode(contract, table)) {
+      return;
+    }
 
     const finalTableName = `${contract}_${table}`;
 
@@ -1081,6 +1090,26 @@ class Database {
       await this.cleanupBlocks(cleanupUntilBlock);
       await this.cleanupTransactions(cleanupUntilBlock);
     }
+  }
+
+  /**
+   * Check if the database change for the given contract and table should be ignored.
+   * @param contract contract name
+   * @param table table name
+   * @returns trye, in case this is a light node and the change should be ignored.
+   */
+  ignoreChangeForLightNode(contract, table) {
+    if (!this.lightNode) {
+      return false;
+    }
+    if (contract === 'market') {
+      if (table === 'metrics') {
+        return true;
+      } else if (table === 'tradesHistory') {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
