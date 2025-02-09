@@ -769,9 +769,6 @@ class SmartContracts {
       const compiled = await vm.isolate.compileScript(contractCode);
       await compiled.run(vm.context);
 
-      await vm.context.global.delete('global');
-      await vm.context.global.delete('done');
-
       vm.inUse = false;
       return contractError;
     } else {
