@@ -762,12 +762,15 @@ class SmartContracts {
       const compiledWrapper = await vm.isolate.compileScript(wrappedCode);
       await compiledWrapper.run(vm.context);
 
+      const compiled = await vm.isolate.compileScript(contractCode);
+      await compiled.run(vm.context);
+
+      await vm.context.global.delete('global');
+      await vm.context.global.delete('done');
+
       await vm.context.global.delete('hscglobal_api');
       await vm.context.global.delete('hscglobal_debug');
       await vm.context.global.delete('hscglobal_db');
-
-      const compiled = await vm.isolate.compileScript(contractCode);
-      await compiled.run(vm.context);
 
       vm.inUse = false;
       return contractError;
