@@ -14,6 +14,7 @@ const conf = {
   databaseName: 'testssc',
   streamNodes: ['https://api.hive.blog'],
   defaultLogLevel: "warn",
+  enablePerUserTxLimit: false
 };
 
 class Fixture {
