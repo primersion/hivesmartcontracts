@@ -562,6 +562,7 @@ class SmartContracts {
            inUse: true,
         };
         JSVMs.push(vm);
+        SmartContracts.initJSVM(vm, jsVMTimeout);
         return vm;
       }
     } else {
@@ -569,6 +570,45 @@ class SmartContracts {
       return vm;
     }
     return null;
+  }
+
+  static initJSVM(vm, jsVMTimeout) {
+    vm.context.global.setSync('hscglobal_externalCopy', x => new ivm.ExternalCopy(x));
+
+    vm.context.global.setSync('hscglobal_v_isAlpha', new ivm.Callback(validator.isAlpha));
+    vm.context.global.setSync('hscglobal_v_isAlphanumeric', new ivm.Callback(validator.isAlphanumeric));
+    vm.context.global.setSync('hscglobal_v_blacklist', new ivm.Callback(validator.blacklist));
+    vm.context.global.setSync('hscglobal_v_isUppercase', new ivm.Callback(validator.isUppercase));
+    vm.context.global.setSync('hscglobal_v_isIP', new ivm.Callback(validator.isIP));
+    vm.context.global.setSync('hscglobal_v_isFQDN', new ivm.Callback(validator.isFQDN));
+
+    vm.context.global.setSync('hscglobal_bn_construct', new ivm.Reference((x, y) => BigNumber(maybeDeref(x))));
+    vm.context.global.setSync('hscglobal_bn_plus', new ivm.Reference((x, y) => x.deref().plus(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_minus', new ivm.Reference((x, y) => x.deref().minus(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_times', new ivm.Reference((x, y) => x.deref().times(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_multipliedBy', new ivm.Reference((x, y, z) => x.deref().multipliedBy(maybeDeref(y), z)));
+    vm.context.global.setSync('hscglobal_bn_dividedBy', new ivm.Reference((x, y, z) => x.deref().dividedBy(maybeDeref(y), z)));
+    vm.context.global.setSync('hscglobal_bn_sqrt', new ivm.Reference((x) => x.deref().sqrt()));
+    vm.context.global.setSync('hscglobal_bn_pow', new ivm.Reference((x, y) => x.deref().pow(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_negated', new ivm.Reference((x) => x.deref().negated()));
+    vm.context.global.setSync('hscglobal_bn_abs', new ivm.Reference((x) => x.deref().abs()));
+    vm.context.global.setSync('hscglobal_bn_lt', new ivm.Reference((x, y) => x.deref().lt(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_lte', new ivm.Reference((x, y) => x.deref().lte(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_eq', new ivm.Reference((x, y) => x.deref().eq(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_gt', new ivm.Reference((x, y) => x.deref().gt(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_gte', new ivm.Reference((x, y) => x.deref().gte(maybeDeref(y))));
+    vm.context.global.setSync('hscglobal_bn_dp', new ivm.Reference((x, y, z) => x.deref().dp(y, z)));
+    vm.context.global.setSync('hscglobal_bn_decimalPlaces', new ivm.Reference((x, y, z) => x.deref().decimalPlaces(y, z)));
+    vm.context.global.setSync('hscglobal_bn_isNaN', new ivm.Reference((x) => x.deref().isNaN()));
+    vm.context.global.setSync('hscglobal_bn_isFinite', new ivm.Reference((x) => x.deref().isFinite()));
+    vm.context.global.setSync('hscglobal_bn_isInteger', new ivm.Reference((x) => x.deref().isInteger()));
+    vm.context.global.setSync('hscglobal_bn_isPositive', new ivm.Reference((x) => x.deref().isPositive()));
+    vm.context.global.setSync('hscglobal_bn_toFixed', new ivm.Reference((x, y, z) => x.deref().toFixed(y, z)));
+    vm.context.global.setSync('hscglobal_bn_toNumber', new ivm.Reference((x) => x.deref().toNumber()));
+    vm.context.global.setSync('hscglobal_bn_toString', new ivm.Reference((x) => x.deref().toString()));
+    vm.context.global.setSync('hscglobal_bn_integerValue', new ivm.Reference((x, y) => x.deref().integerValue(y)));
+    vm.context.global.setSync('hscglobal_bn_min', new ivm.Reference((...args) => BigNumber.min.apply(undefined, args.map(maybeDeref))));
+    vm.context.global.setSync('hscglobal_bn_max', new ivm.Reference((...args) => BigNumber.max.apply(undefined, args.map(maybeDeref))));
   }
 
   // run the contractCode in a VM with the vmState as a state for the VM
@@ -581,78 +621,11 @@ class SmartContracts {
       vm.context.global.setSync('done', (error) => {
         contractError = error;
       });
-      vm.context.global.setSync('sscglobal_externalCopy', x => new ivm.ExternalCopy(x));
-      vm.context.global.setSync('sscglobal_api', new ivm.Reference(vmState.api));
-      vm.context.global.setSync('sscglobal_debug', vmState.api.debug);
-      vm.context.global.setSync('sscglobal_db', new ivm.Reference(vmState.db));
-      vm.context.global.setSync('sscglobalv_isAlpha', new ivm.Callback(validator.isAlpha));
-      vm.context.global.setSync('sscglobalv_isAlphanumeric', new ivm.Callback(validator.isAlphanumeric));
-      vm.context.global.setSync('sscglobalv_blacklist', new ivm.Callback(validator.blacklist));
-      vm.context.global.setSync('sscglobalv_isUppercase', new ivm.Callback(validator.isUppercase));
-      vm.context.global.setSync('sscglobalv_isIP', new ivm.Callback(validator.isIP));
-      vm.context.global.setSync('sscglobalv_isFQDN', new ivm.Callback(validator.isFQDN));
-
-      vm.context.global.setSync('sscglobal_bn_construct', new ivm.Reference((x, y) => BigNumber(maybeDeref(x))));
-      vm.context.global.setSync('sscglobal_bn_plus', new ivm.Reference((x, y) => x.deref().plus(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_minus', new ivm.Reference((x, y) => x.deref().minus(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_times', new ivm.Reference((x, y) => x.deref().times(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_multipliedBy', new ivm.Reference((x, y, z) => x.deref().multipliedBy(maybeDeref(y), z)));
-      vm.context.global.setSync('sscglobal_bn_dividedBy', new ivm.Reference((x, y, z) => x.deref().dividedBy(maybeDeref(y), z)));
-      vm.context.global.setSync('sscglobal_bn_sqrt', new ivm.Reference((x) => x.deref().sqrt()));
-      vm.context.global.setSync('sscglobal_bn_pow', new ivm.Reference((x, y) => x.deref().pow(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_negated', new ivm.Reference((x) => x.deref().negated()));
-      vm.context.global.setSync('sscglobal_bn_abs', new ivm.Reference((x) => x.deref().abs()));
-      vm.context.global.setSync('sscglobal_bn_lt', new ivm.Reference((x, y) => x.deref().lt(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_lte', new ivm.Reference((x, y) => x.deref().lte(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_eq', new ivm.Reference((x, y) => x.deref().eq(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_gt', new ivm.Reference((x, y) => x.deref().gt(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_gte', new ivm.Reference((x, y) => x.deref().gte(maybeDeref(y))));
-      vm.context.global.setSync('sscglobal_bn_dp', new ivm.Reference((x, y, z) => x.deref().dp(y, z)));
-      vm.context.global.setSync('sscglobal_bn_decimalPlaces', new ivm.Reference((x, y, z) => x.deref().decimalPlaces(y, z)));
-      vm.context.global.setSync('sscglobal_bn_isNaN', new ivm.Reference((x) => x.deref().isNaN()));
-      vm.context.global.setSync('sscglobal_bn_isFinite', new ivm.Reference((x) => x.deref().isFinite()));
-      vm.context.global.setSync('sscglobal_bn_isInteger', new ivm.Reference((x) => x.deref().isInteger()));
-      vm.context.global.setSync('sscglobal_bn_isPositive', new ivm.Reference((x) => x.deref().isPositive()));
-      vm.context.global.setSync('sscglobal_bn_toFixed', new ivm.Reference((x, y, z) => x.deref().toFixed(y, z)));
-      vm.context.global.setSync('sscglobal_bn_toNumber', new ivm.Reference((x) => x.deref().toNumber()));
-      vm.context.global.setSync('sscglobal_bn_toString', new ivm.Reference((x) => x.deref().toString()));
-      vm.context.global.setSync('sscglobal_bn_integerValue', new ivm.Reference((x, y) => x.deref().integerValue(y)));
-      vm.context.global.setSync('sscglobal_bn_min', new ivm.Reference((...args) => BigNumber.min.apply(undefined, args.map(maybeDeref))));
-      vm.context.global.setSync('sscglobal_bn_max', new ivm.Reference((...args) => BigNumber.max.apply(undefined, args.map(maybeDeref))));
+      vm.context.global.setSync('hscglobal_api', new ivm.Reference(vmState.api));
+      vm.context.global.setSync('hscglobal_debug', vmState.api.debug);
+      vm.context.global.setSync('hscglobal_db', new ivm.Reference(vmState.db));
 
       const wrappedCode = 'new ' + function() {
-        let _sscglobal_api = sscglobal_api;
-        let _sscglobal_debug = sscglobal_debug;
-        let _sscglobal_db = sscglobal_db;
-        let _sscglobal_externalCopy = sscglobal_externalCopy;
-        let _sscglobal_bn_construct = sscglobal_bn_construct;
-        let _sscglobal_bn_plus = sscglobal_bn_plus;
-        let _sscglobal_bn_minus = sscglobal_bn_minus;
-        let _sscglobal_bn_times = sscglobal_bn_times;
-        let _sscglobal_bn_multipliedBy = sscglobal_bn_multipliedBy;
-        let _sscglobal_bn_dividedBy = sscglobal_bn_dividedBy;
-        let _sscglobal_bn_sqrt = sscglobal_bn_sqrt;
-        let _sscglobal_bn_pow = sscglobal_bn_pow;
-        let _sscglobal_bn_negated = sscglobal_bn_negated;
-        let _sscglobal_bn_abs = sscglobal_bn_abs;
-        let _sscglobal_bn_lt = sscglobal_bn_lt;
-        let _sscglobal_bn_lte = sscglobal_bn_lte;
-        let _sscglobal_bn_eq = sscglobal_bn_eq;
-        let _sscglobal_bn_gt = sscglobal_bn_gt;
-        let _sscglobal_bn_gte = sscglobal_bn_gte;
-        let _sscglobal_bn_dp = sscglobal_bn_dp;
-        let _sscglobal_bn_decimalPlaces = sscglobal_bn_decimalPlaces;
-        let _sscglobal_bn_isNaN = sscglobal_bn_isNaN;
-        let _sscglobal_bn_isFinite = sscglobal_bn_isFinite;
-        let _sscglobal_bn_isInteger = sscglobal_bn_isInteger;
-        let _sscglobal_bn_isPositive = sscglobal_bn_isPositive;
-        let _sscglobal_bn_toFixed = sscglobal_bn_toFixed;
-        let _sscglobal_bn_toNumber = sscglobal_bn_toNumber;
-        let _sscglobal_bn_toString = sscglobal_bn_toString;
-        let _sscglobal_bn_integerValue = sscglobal_bn_integerValue;
-        let _sscglobal_bn_min = sscglobal_bn_min;
-        let _sscglobal_bn_max = sscglobal_bn_max;
-
         let deepUnwrap = (x) => {
           let y = x;
           if (typeof x === "object" && x !== null) {
@@ -666,64 +639,64 @@ class SmartContracts {
         };
         let applyWrapper = (fn) => {
           return async (...args) => {
-            const extArgs = args.map(x => _sscglobal_externalCopy(deepUnwrap(x)).copyInto());
+            const extArgs = args.map(x => hscglobal_externalCopy(deepUnwrap(x)).copyInto());
             const result = await fn.applySyncPromise(undefined, extArgs);
             return (typeof result === 'object' && result.copy) ? await result.copy() : result;
           }
         };
         let applyWrapperSync = (fn) => {
           return (...args) => {
-            const extArgs = args.map(x => _sscglobal_externalCopy(deepUnwrap(x)).copyInto());
+            const extArgs = args.map(x => hscglobal_externalCopy(deepUnwrap(x)).copyInto());
             const result = fn.applySync(undefined, extArgs);
             return (typeof result === 'object' && result.copy) ? result.copy() : result;
           }
         };
         let maybeUnwrap = (x) => {
-          return typeof x === 'object' && x !== null && x._sscg_unwrap ? _sscglobal_bn_construct.applySync(undefined, [x.toString()]) : x;
+          return typeof x === 'object' && x !== null && x._hscg_unwrap ? hscglobal_bn_construct.applySync(undefined, [x.toString()]) : x;
         };
         let makeBigNumber = (x) => {
-          return bigNumberWrapper(_sscglobal_bn_construct.applySync(undefined, [maybeUnwrap(x)]));
+          return bigNumberWrapper(hscglobal_bn_construct.applySync(undefined, [maybeUnwrap(x)]));
         };
         let bigNumberWrapper = (x) => {
           return {
-            plus: (y) => bigNumberWrapper(_sscglobal_bn_plus.applySync(undefined,[x, maybeUnwrap(y)])),
-            minus: (y) => bigNumberWrapper(_sscglobal_bn_minus.applySync(undefined,[x, maybeUnwrap(y)])),
-            times: (y) => bigNumberWrapper(_sscglobal_bn_times.applySync(undefined,[x, maybeUnwrap(y)])),
-            multipliedBy: (y, z) => bigNumberWrapper(_sscglobal_bn_multipliedBy.applySync(undefined,[x, maybeUnwrap(y), z])),
-            dividedBy: (y, z) => bigNumberWrapper(_sscglobal_bn_dividedBy.applySync(undefined,[x, maybeUnwrap(y), z])),
-            sqrt: () => bigNumberWrapper(_sscglobal_bn_sqrt.applySync(undefined,[x])),
-            pow: (y) => bigNumberWrapper(_sscglobal_bn_pow.applySync(undefined,[x, maybeUnwrap(y)])),
-            negated: () => bigNumberWrapper(_sscglobal_bn_negated.applySync(undefined,[x])),
-            abs: () => bigNumberWrapper(_sscglobal_bn_abs.applySync(undefined,[x])),
-            lt: (y) => _sscglobal_bn_lt.applySync(undefined, [x, maybeUnwrap(y)]),
-            lte: (y) => _sscglobal_bn_lte.applySync(undefined, [x, maybeUnwrap(y)]),
-            eq: (y) => _sscglobal_bn_eq.applySync(undefined, [x, maybeUnwrap(y)]),
-            gt: (y) => _sscglobal_bn_gt.applySync(undefined, [x, maybeUnwrap(y)]),
-            gte: (y) => _sscglobal_bn_gte.applySync(undefined, [x, maybeUnwrap(y)]),
-            dp: (y, z) => { const ret = _sscglobal_bn_dp.applySync(undefined, [x, y, z]);
+            plus: (y) => bigNumberWrapper(hscglobal_bn_plus.applySync(undefined,[x, maybeUnwrap(y)])),
+            minus: (y) => bigNumberWrapper(hscglobal_bn_minus.applySync(undefined,[x, maybeUnwrap(y)])),
+            times: (y) => bigNumberWrapper(hscglobal_bn_times.applySync(undefined,[x, maybeUnwrap(y)])),
+            multipliedBy: (y, z) => bigNumberWrapper(hscglobal_bn_multipliedBy.applySync(undefined,[x, maybeUnwrap(y), z])),
+            dividedBy: (y, z) => bigNumberWrapper(hscglobal_bn_dividedBy.applySync(undefined,[x, maybeUnwrap(y), z])),
+            sqrt: () => bigNumberWrapper(hscglobal_bn_sqrt.applySync(undefined,[x])),
+            pow: (y) => bigNumberWrapper(hscglobal_bn_pow.applySync(undefined,[x, maybeUnwrap(y)])),
+            negated: () => bigNumberWrapper(hscglobal_bn_negated.applySync(undefined,[x])),
+            abs: () => bigNumberWrapper(hscglobal_bn_abs.applySync(undefined,[x])),
+            lt: (y) => hscglobal_bn_lt.applySync(undefined, [x, maybeUnwrap(y)]),
+            lte: (y) => hscglobal_bn_lte.applySync(undefined, [x, maybeUnwrap(y)]),
+            eq: (y) => hscglobal_bn_eq.applySync(undefined, [x, maybeUnwrap(y)]),
+            gt: (y) => hscglobal_bn_gt.applySync(undefined, [x, maybeUnwrap(y)]),
+            gte: (y) => hscglobal_bn_gte.applySync(undefined, [x, maybeUnwrap(y)]),
+            dp: (y, z) => { const ret = hscglobal_bn_dp.applySync(undefined, [x, y, z]);
               return typeof y === 'number' ? bigNumberWrapper(ret) : ret;
             },
-            decimalPlaces: (y, z) => { const ret = _sscglobal_bn_decimalPlaces.applySync(undefined, [x, y, z]);
+            decimalPlaces: (y, z) => { const ret = hscglobal_bn_decimalPlaces.applySync(undefined, [x, y, z]);
               return typeof y === 'number' ? bigNumberWrapper(ret) : ret;
             },
-            isNaN: () => _sscglobal_bn_isNaN.applySync(undefined, [x]),
-            isFinite: () => _sscglobal_bn_isFinite.applySync(undefined, [x]),
-            isInteger: () => _sscglobal_bn_isInteger.applySync(undefined, [x]),
-            isPositive: () => _sscglobal_bn_isPositive.applySync(undefined, [x]),
-            toFixed: (y, z) => _sscglobal_bn_toFixed.applySync(undefined, [x, y, z]),
-            toNumber: () => _sscglobal_bn_toNumber.applySync(undefined, [x]),
-            toString: () => _sscglobal_bn_toString.applySync(undefined, [x]),
-            integerValue: (y) => bigNumberWrapper(_sscglobal_bn_integerValue.applySync(undefined, [x, y])),
-            _sscg_unwrap: true,//() => x,
-            [Symbol.toPrimitive]: () => _sscglobal_bn_toNumber.applySync(undefined, [x]),
+            isNaN: () => hscglobal_bn_isNaN.applySync(undefined, [x]),
+            isFinite: () => hscglobal_bn_isFinite.applySync(undefined, [x]),
+            isInteger: () => hscglobal_bn_isInteger.applySync(undefined, [x]),
+            isPositive: () => hscglobal_bn_isPositive.applySync(undefined, [x]),
+            toFixed: (y, z) => hscglobal_bn_toFixed.applySync(undefined, [x, y, z]),
+            toNumber: () => hscglobal_bn_toNumber.applySync(undefined, [x]),
+            toString: () => hscglobal_bn_toString.applySync(undefined, [x]),
+            integerValue: (y) => bigNumberWrapper(hscglobal_bn_integerValue.applySync(undefined, [x, y])),
+            _hscg_unwrap: true,//() => x,
+            [Symbol.toPrimitive]: () => hscglobal_bn_toNumber.applySync(undefined, [x]),
           };
         };
         let getApiProp = (k) => {
-          const v = _sscglobal_api.getSync(k, { copy: true });
+          const v = hscglobal_api.getSync(k, { copy: true });
           return typeof v !== 'undefined' ? v : null;
         };
         let getDbProp = (k) => {
-          const v = _sscglobal_db.getSync(k, { copy: true });
+          const v = hscglobal_db.getSync(k, { copy: true });
           return typeof v !== 'undefined' ? v : null;
         };
         global.api = {
@@ -752,18 +725,18 @@ class SmartContracts {
           },
           BigNumber: makeBigNumber,
           validator: {
-            isAlpha: sscglobalv_isAlpha,
-            isAlphanumeric: sscglobalv_isAlphanumeric,
-            blacklist: sscglobalv_blacklist,
-            isUppercase: sscglobalv_isUppercase,
-            isIP: sscglobalv_isIP,
-            isFQDN: sscglobalv_isFQDN,
+            isAlpha: hscglobal_v_isAlpha,
+            isAlphanumeric: hscglobal_v_isAlphanumeric,
+            blacklist: hscglobal_v_blacklist,
+            isUppercase: hscglobal_v_isUppercase,
+            isIP: hscglobal_v_isIP,
+            isFQDN: hscglobal_v_isFQDN,
           },
           logs: applyWrapperSync(getApiProp('logs')),
           SHA256: applyWrapperSync(getApiProp('SHA256')),
           checkSignature: applyWrapperSync(getApiProp('checkSignature')),
           random: applyWrapperSync(getApiProp('random')),
-          debug: _sscglobal_debug,
+          debug: hscglobal_debug,
           executeSmartContract: applyWrapper(getApiProp('executeSmartContract')),
           executeSmartContractAsOwner: applyWrapper(getApiProp('executeSmartContractAsOwner')),
           transferTokens: applyWrapper(getApiProp('transferTokens')),
@@ -782,43 +755,19 @@ class SmartContracts {
         global.api.BigNumber.ROUND_HALF_EVEN = 6;
         global.api.BigNumber.ROUND_HALF_CEIL = 7;
         global.api.BigNumber.ROUND_HALF_FLOOR = 8;
-        global.api.BigNumber.min = (...args) => bigNumberWrapper(_sscglobal_bn_min.applySync(undefined, args.map(maybeUnwrap)));
-        global.api.BigNumber.max = (...args) => bigNumberWrapper(_sscglobal_bn_max.applySync(undefined, args.map(maybeUnwrap)));
+        global.api.BigNumber.min = (...args) => bigNumberWrapper(hscglobal_bn_min.applySync(undefined, args.map(maybeUnwrap)));
+        global.api.BigNumber.max = (...args) => bigNumberWrapper(hscglobal_bn_max.applySync(undefined, args.map(maybeUnwrap)));
       };
 
       const compiledWrapper = await vm.isolate.compileScript(wrappedCode);
       await compiledWrapper.run(vm.context);
-      await vm.context.global.delete('sscglobal_api');
-      await vm.context.global.delete('sscglobal_debug');
-      await vm.context.global.delete('sscglobal_db');
-      await vm.context.global.delete('sscglobal_externalCopy');
-      await vm.context.global.delete('sscglobal_bn_construct');
-      await vm.context.global.delete('sscglobal_bn_plus');
-      await vm.context.global.delete('sscglobal_bn_minus');
-      await vm.context.global.delete('sscglobal_bn_times');
-      await vm.context.global.delete('sscglobal_bn_multipliedBy');
-      await vm.context.global.delete('sscglobal_bn_dividedBy');
-      await vm.context.global.delete('sscglobal_bn_sqrt');
-      await vm.context.global.delete('sscglobal_bn_pow');
-      await vm.context.global.delete('sscglobal_bn_negated');
-      await vm.context.global.delete('sscglobal_bn_abs');
-      await vm.context.global.delete('sscglobal_bn_lt');
-      await vm.context.global.delete('sscglobal_bn_lte');
-      await vm.context.global.delete('sscglobal_bn_eq');
-      await vm.context.global.delete('sscglobal_bn_gt');
-      await vm.context.global.delete('sscglobal_bn_gte');
-      await vm.context.global.delete('sscglobal_bn_dp');
-      await vm.context.global.delete('sscglobal_bn_decimalPlaces');
-      await vm.context.global.delete('sscglobal_bn_isNaN');
-      await vm.context.global.delete('sscglobal_bn_isFinite');
-      await vm.context.global.delete('sscglobal_bn_isInteger');
-      await vm.context.global.delete('sscglobal_bn_isPositive');
-      await vm.context.global.delete('sscglobal_bn_toFixed');
-      await vm.context.global.delete('sscglobal_bn_toNumber');
-      await vm.context.global.delete('sscglobal_bn_toString');
-      await vm.context.global.delete('sscglobal_bn_integerValue');
-      await vm.context.global.delete('sscglobal_bn_min');
-      await vm.context.global.delete('sscglobal_bn_max');
+      await vm.context.global.delete('global');
+      await vm.context.global.delete('done');
+
+      await vm.context.global.delete('hscglobal_api');
+      await vm.context.global.delete('hscglobal_debug');
+      await vm.context.global.delete('hscglobal_db');
+
       const compiled = await vm.isolate.compileScript(contractCode);
       await compiled.run(vm.context);
       vm.inUse = false;
